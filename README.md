@@ -70,15 +70,14 @@ is the vehicle starting offset of a straight line (reference). If the MPC implem
 3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.
 
 ## The Model
-### Describe model in detail. This includes the state, actuators and update equations.
+#### Describe model in detail. This includes the state, actuators and update equations.
 
 ## Timestep Length and Elapsed Duration (N & dt)
-### Discuss the reasoning behind the chosen N (timestep length) and dt (elapsed duration between timesteps) values. Provide details of previous values tried.
+#### Discuss the reasoning behind the chosen N (timestep length) and dt (elapsed duration between timesteps) values. Provide details of previous values tried.
 
 ## Polynomial Fitting and MPC Preprocessing
-### A polynomial is fitted to waypoints. If preprocess waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described.
+#### A polynomial is fitted to waypoints. If preprocess waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described.
 
 ## Model Predictive Control with Latency
-### Implement Model Predictive Control that handles a 100 millisecond latency. Provides details on how to deal with latency.
-
+#### Implement Model Predictive Control that handles a 100 millisecond latency. Provides details on how to deal with latency.
 
