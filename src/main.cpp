@@ -157,8 +157,8 @@ int main() {
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
-          double poly_inc = 2.5;  // set x distance
-          int num_pts = 25;  // set num of points into future to view
+          const double poly_inc = 2.5;  // set x distance
+          const int num_pts = 16;  // set num of points into future to view
           for (int i=1; i<num_pts; ++i) {
             next_x_vals.push_back(poly_inc * i);
             next_y_vals.push_back(polyeval(coeffs, poly_inc * i));
@@ -171,7 +171,7 @@ int main() {
           msgJson["next_y"] = next_y_vals;
 
 
-          auto msg = "42[\"steer\"," + msgJson.dump() + "]";
+          auto msg = "42[\"steer\"," + msgJson.dump() + "]\n";
           std::cout << msg << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
