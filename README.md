@@ -72,12 +72,29 @@ is the vehicle starting offset of a straight line (reference). If the MPC implem
 ## The Model
 #### Describe model in detail. This includes the state, actuators and update equations.
 
+The state consists of x,y positions, psi yaw angle, v velocity, cte cross track error, epsi yaw angle error, d steering angle, a acceleration.
+
+The state is updated as follows:
+```
+x1 = (x0 + v0 * CppAD::cos(psi0) * dt);
+y1 = (y0 + v0 * CppAD::sin(psi0) * dt);
+psi1 = (psi0 + (v0/Lf) * delta0 * dt);
+v1 = (v0 + a0 * dt);
+cte1 = ((f0-y0) + v0 * CppAD::sin(epsi0) * dt);
+epsi1 = ((psi0-psides0) + (v0/Lf) * delta0 * dt);
+```
+
 ## Timestep Length and Elapsed Duration (N & dt)
 #### Discuss the reasoning behind the chosen N (timestep length) and dt (elapsed duration between timesteps) values. Provide details of previous values tried.
+
+The values were initially set to `N=10` & `dt=0.1`, but the timestep length `N` value was later increased to 16 to account for additional points projected into the future. The elapsed duration `dt` value was increased to 0.16 to be larger than the 0.1s latency period.
 
 ## Polynomial Fitting and MPC Preprocessing
 #### A polynomial is fitted to waypoints. If preprocess waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described.
 
+They yellow line marks the waypoints path with a polynomial fitted to waypoints received from telemtry.
+
 ## Model Predictive Control with Latency
 #### Implement Model Predictive Control that handles a 100 millisecond latency. Provides details on how to deal with latency.
 
+The current implementation deals with the 100ms latency by using a timestep `dt` value of 0.16, which is larger than the 0.1s latency value.

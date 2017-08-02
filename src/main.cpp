@@ -77,7 +77,7 @@ int main() {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    cout << sdata << endl;
+    //cout << sdata << endl;  //print telemtry
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -91,6 +91,18 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          //double steer_value = j[1]["steering_angle"];
+          //double throttle_value = j[1]["throttle"];
+          const double Lf = 2.67;
+
+          /*
+          // predict state in 100ms
+          const double latency = 0.1; 
+          px += v*cos(psi)*latency;
+          py += v*sin(psi)*latency;
+          psi += v*(steer_value/Lf)*latency;
+          v += throttle_value*latency;
+          */
 
           /*
           * TO_DID: Calculate steering angle and throttle using MPC.
@@ -98,7 +110,7 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          for (int i=0; i<ptsx.size(); ++i) {
+          for (int i=0; i<ptsx.size(); i++) {
             // shift car reference angle to 90 deg
             double shift_x = ptsx[i]-px;  // resets x,y position to 0
             double shift_y = ptsy[i]-py;
@@ -119,15 +131,10 @@ int main() {
           //double epsi = psi - atan(coeffs[1]) + 2*px*coeffs[2] + 3*coeffs[3]*pow(px,2);
           double epsi = -atan(coeffs[1]);
 
-          //double steer_value = j[1]["steering_angle"];;
-          //double throttle_value = j[1]["throttle"];;
-
           Eigen::VectorXd state(6);
           state << 0, 0, 0, v, cte, epsi;
 
           auto vars = mpc.Solve(state, coeffs);
-
-          const double Lf = 2.67;
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -139,7 +146,7 @@ int main() {
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
-          for (int i=2; i<vars.size(); ++i) {
+          for (int i=2; i<vars.size(); i++) {
             if(i%2 == 0) {
               mpc_x_vals.push_back(vars[i]);
             } else {
@@ -158,8 +165,8 @@ int main() {
           vector<double> next_y_vals;
 
           const double poly_inc = 2.5;  // set x distance
-          const int num_pts = 16;  // set num of points into future to view
-          for (int i=1; i<num_pts; ++i) {
+          const int num_pts = 20;  // set num of points into future to view
+          for (int i=1; i<num_pts; i++) {
             next_x_vals.push_back(poly_inc * i);
             next_y_vals.push_back(polyeval(coeffs, poly_inc * i));
           }

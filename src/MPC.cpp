@@ -7,7 +7,7 @@ using CppAD::AD;
 
 // TO_DID: Set the timestep length and duration
 const size_t N = 10;
-const double dt = 0.1;
+const double dt = 0.11;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -56,21 +56,21 @@ class FG_eval {
     // TO_DID: Define the cost related the reference state and
     // any anything you think may be beneficial.
     for (int t=0; t<N; t++) {
-      fg[0] += 1.0*CppAD::pow(vars[cte_start+t], 2);
-      fg[0] += 10.0*CppAD::pow(vars[epsi_start+t], 2);
-      fg[0] += 0.2*CppAD::pow(vars[v_start+t] - ref_v, 2);
+      fg[0] += 20*CppAD::pow(vars[cte_start+t], 2);
+      fg[0] += 60*CppAD::pow(vars[epsi_start+t], 2);
+      fg[0] += 0.1*CppAD::pow(vars[v_start+t] - ref_v, 2);
     }
 
     // Actuator Cost
     for (int t=0; t < N-1; t++) {
-      fg[0] += 256.0*CppAD::pow(vars[delta_start+t], 2);
-      fg[0] += 8.0*CppAD::pow(vars[a_start+t], 2);
+      fg[0] += 160*CppAD::pow(vars[delta_start+t], 2);
+      fg[0] += 10*CppAD::pow(vars[a_start+t], 2);
     }
 
     // Value gap between sequential Actuator Cost
     for (int t=0; t < N-2; t++) {
-      fg[0] += 10.0*CppAD::pow(vars[delta_start+t+1] - vars[delta_start+t], 2);
-      fg[0] += 0*CppAD::pow(vars[a_start+t+1] - vars[a_start+t], 2);
+      fg[0] += 8*CppAD::pow(vars[delta_start+t+1] - vars[delta_start+t], 2);
+      fg[0] += 0.1*CppAD::pow(vars[a_start+t+1] - vars[a_start+t], 2);
     }
 
     //
