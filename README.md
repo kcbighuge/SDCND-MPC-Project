@@ -92,9 +92,9 @@ The values were initially set to `N=10` & `dt=0.1`, but the timestep length `N` 
 ## Polynomial Fitting and MPC Preprocessing
 #### A polynomial is fitted to waypoints. If preprocess waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described.
 
-They yellow line marks the waypoints path with a polynomial fitted to waypoints received from telemtry.
+The yellow line marks the waypoints path with a polynomial fitted to waypoints received from telemetry.
 
 ## Model Predictive Control with Latency
 #### Implement Model Predictive Control that handles a 100 millisecond latency. Provides details on how to deal with latency.
 
-The current implementation deals with the 100ms latency by using a timestep `dt` value of 0.16, which is larger than the 0.1s latency value.
+The current implementation deals with the 100ms latency by using a timestep `dt` value of 0.11, which is larger than the 0.1s latency value.

@@ -7,7 +7,7 @@ using CppAD::AD;
 
 // TO_DID: Set the timestep length and duration
 const size_t N = 10;
-const double dt = 0.11;
+const double dt = 0.10;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -21,10 +21,28 @@ const double dt = 0.11;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
-//const double ref_cte = 0;
-//const double ref_epsi = 0;
+// reference velocity
 const double ref_v = 100;
 
+//weighting factors to tune the MPC
+const double cte_wt      = 160.0;  // cross-track error
+const double epsi_wt     = 40.0;  // psi error
+const double v_wt        = 0.1 ;  // velocity
+const double delta_wt    = 800.0;  // steering delta
+const double a_wt        = 0.1;  // acceleration
+const double deltadot_wt = 1000.0;  // steering delta change
+const double adot_wt     = 0.01;  // acceleration change
+
+//weighting factors for ref_v=80;
+// const double cte_wt       = 20.0;  // cross-track error
+// const double epsi_wt      = 60.0;  // psi error
+// const double v_wt         = 1.0 ;  // velocity
+// const double delta_wt     = 160.0;  // steering delta
+// const double a_wt         = 10.0;  // acceleration
+// const double deltadot_wt  = 8.0;  // steering delta change
+// const double adot_wt      = 0.1;  // acceleration change
+
+// specify starting points for state & actuator variables
 const size_t x_start = 0;
 const size_t y_start = x_start + N;
 const size_t psi_start = y_start + N;
@@ -33,6 +51,7 @@ const size_t cte_start = v_start + N;
 const size_t epsi_start = cte_start + N;
 const size_t delta_start = epsi_start + N;
 const size_t a_start = delta_start + N - 1;
+
 
 class FG_eval {
  public:
@@ -56,21 +75,21 @@ class FG_eval {
     // TO_DID: Define the cost related the reference state and
     // any anything you think may be beneficial.
     for (int t=0; t<N; t++) {
-      fg[0] += 20*CppAD::pow(vars[cte_start+t], 2);
-      fg[0] += 60*CppAD::pow(vars[epsi_start+t], 2);
-      fg[0] += 0.1*CppAD::pow(vars[v_start+t] - ref_v, 2);
+      fg[0] += cte_wt * CppAD::pow(vars[cte_start+t], 2);
+      fg[0] += epsi_wt * CppAD::pow(vars[epsi_start+t], 2);
+      fg[0] += v_wt * CppAD::pow(vars[v_start+t] - ref_v, 2);
     }
 
     // Actuator Cost
     for (int t=0; t < N-1; t++) {
-      fg[0] += 160*CppAD::pow(vars[delta_start+t], 2);
-      fg[0] += 10*CppAD::pow(vars[a_start+t], 2);
+      fg[0] += delta_wt * CppAD::pow(vars[delta_start+t], 2);
+      fg[0] += a_wt * CppAD::pow(vars[a_start+t], 2);
     }
 
     // Value gap between sequential Actuator Cost
     for (int t=0; t < N-2; t++) {
-      fg[0] += 8*CppAD::pow(vars[delta_start+t+1] - vars[delta_start+t], 2);
-      fg[0] += 0.1*CppAD::pow(vars[a_start+t+1] - vars[a_start+t], 2);
+      fg[0] += deltadot_wt * CppAD::pow(vars[delta_start+t+1] - vars[delta_start+t], 2);
+      fg[0] += adot_wt * CppAD::pow(vars[a_start+t+1] - vars[a_start+t], 2);
     }
 
     //
@@ -186,8 +205,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
   // The upper & lower limits of delta are set to -25 and 25 deg (in radians)
   for (int i = delta_start; i < a_start; i++) {
-    vars_lowerbound[i] = -0.436332*Lf;
-    vars_upperbound[i] = 0.436332*Lf;
+    vars_lowerbound[i] = -0.436332;
+    vars_upperbound[i] = 0.436332;
   }
 
   // Acceleration/decceleration upper and lower limits.
@@ -266,9 +285,9 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   result.push_back(solution.x[delta_start]);
   result.push_back(solution.x[a_start]);
 
-  for (int i=0; i < N-1; i++) {
-    result.push_back(solution.x[x_start + i+1]);
-    result.push_back(solution.x[y_start + i+1]);
+  for (int i=0; i < N; i++) {
+    result.push_back(solution.x[x_start + i]);
+    result.push_back(solution.x[y_start + i]);
   }
 
   return result;

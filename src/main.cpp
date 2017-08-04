@@ -91,18 +91,7 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
-          //double steer_value = j[1]["steering_angle"];
-          //double throttle_value = j[1]["throttle"];
           const double Lf = 2.67;
-
-          /*
-          // predict state in 100ms
-          const double latency = 0.1; 
-          px += v*cos(psi)*latency;
-          py += v*sin(psi)*latency;
-          psi += v*(steer_value/Lf)*latency;
-          v += throttle_value*latency;
-          */
 
           /*
           * TO_DID: Calculate steering angle and throttle using MPC.
@@ -110,8 +99,9 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
+           // shift car reference angle to 90 deg
+          // see: https://www.youtube.com/watch?v=bOQuhpz3YfU&t=395
           for (int i=0; i<ptsx.size(); i++) {
-            // shift car reference angle to 90 deg
             double shift_x = ptsx[i]-px;  // resets x,y position to 0
             double shift_y = ptsy[i]-py;
 
@@ -126,20 +116,33 @@ int main() {
           Eigen::Map<Eigen::VectorXd> ptsy_trans(ptry, 6);
 
           // calculate cte & epsi
-          auto coeffs = polyfit(ptsx_trans, ptsy_trans, 3);
-          double cte = polyeval(coeffs, 0);
+          const auto coeffs = polyfit(ptsx_trans, ptsy_trans, 3);
+          const double cte = polyeval(coeffs, 0);
           //double epsi = psi - atan(coeffs[1]) + 2*px*coeffs[2] + 3*coeffs[3]*pow(px,2);
-          double epsi = -atan(coeffs[1]);
+          const double epsi = -atan(coeffs[1]);
 
           Eigen::VectorXd state(6);
-          state << 0, 0, 0, v, cte, epsi;
+          //state << 0, 0, 0, v, cte, epsi;
 
-          auto vars = mpc.Solve(state, coeffs);
+          // predict state in 100ms
+          const double steer_value = j[1]["steering_angle"];
+          const double throttle_value = j[1]["throttle"];
+          const double latency = 0.1;  //try half of latency period
+
+          double fut_x = v * cos(0) * latency;  
+          double fut_y = v * sin(0) * latency;
+          double fut_psi = -(v/Lf) * steer_value*deg2rad(25) * latency;
+          double fut_v = v + throttle_value * latency;
+          double fut_cte = cte + v *sin(epsi) * latency;
+          double fut_epsi = epsi - (v/Lf) * steer_value*deg2rad(25) * latency;
+          state << fut_x, fut_y, fut_psi, fut_v, fut_cte, fut_epsi;
+
+          const auto vars = mpc.Solve(state, coeffs);
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = -vars[0] / (deg2rad(25) * Lf);
+          msgJson["steering_angle"] = -vars[0] / deg2rad(25);
           msgJson["throttle"] = vars[1];
 
           //Display the MPC predicted trajectory 
