@@ -55,8 +55,7 @@ Self-Driving Car Engineer Nanodegree Program
 
 ## Basic Build Instructions
 
-
-1. Clone this repo.
+1. Clone this repo. (see [original udacity repo here](https://github.com/udacity/CarND-MPC-Project))
 2. Make a build directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
 4. Run it: `./mpc`.
@@ -72,7 +71,17 @@ is the vehicle starting offset of a straight line (reference). If the MPC implem
 ## The Model
 #### Describe model in detail. This includes the state, actuators and update equations.
 
-The state consists of x,y positions, psi yaw angle, v velocity, cte cross track error, epsi yaw angle error, d steering angle, a acceleration.
+The MPC is set up as follows:
+1. Vehicle trajectory with number of timesteps `N` and timestep duration `dt`.
+2. Vehicle state, actuation, and lower/upper constraints on the variables. State & actuation consists of: 
+- `x,y` positions
+- `psi` yaw angle
+- `v` velocity
+- `cte` cross track error
+- `epsi` yaw error
+- `delta` steering angle
+- `a` acceleration
+3. Cost function to optimize actuator values.
 
 The state is updated as follows:
 ```

@@ -22,25 +22,27 @@ const double dt = 0.10;
 const double Lf = 2.67;
 
 // reference velocity
-const double ref_v = 100;
+const double ref_v = 200;
 
-//weighting factors to tune the MPC
-const double cte_wt      = 160.0;  // cross-track error
+/*//weighting factors to tune the MPC
+const double cte_wt      = 2000;  // cross-track error
+const double epsi_wt     = 2000;  // psi error
+const double v_wt        = 1;  // velocity
+const double delta_wt    = 5;  // steering delta
+const double a_wt        = 5;  // acceleration
+const double deltadot_wt = 200;  // steering delta change
+const double adot_wt     = 10;  // acceleration change
+*/
+
+//weighting factors to tune the MPC, good up to ref_v=200
+const double cte_wt      = 200.0;  // cross-track error
 const double epsi_wt     = 40.0;  // psi error
-const double v_wt        = 0.1 ;  // velocity
-const double delta_wt    = 800.0;  // steering delta
-const double a_wt        = 0.1;  // acceleration
-const double deltadot_wt = 1000.0;  // steering delta change
-const double adot_wt     = 0.01;  // acceleration change
+const double v_wt        = 0.1;  // velocity
+const double delta_wt    = 1600.0;  // steering delta
+const double a_wt        = 1.0;  // acceleration
+const double deltadot_wt = 4000.0;  // steering delta change
+const double adot_wt     = 0.0;  // acceleration change
 
-//weighting factors for ref_v=80;
-// const double cte_wt       = 20.0;  // cross-track error
-// const double epsi_wt      = 60.0;  // psi error
-// const double v_wt         = 1.0 ;  // velocity
-// const double delta_wt     = 160.0;  // steering delta
-// const double a_wt         = 10.0;  // acceleration
-// const double deltadot_wt  = 8.0;  // steering delta change
-// const double adot_wt      = 0.1;  // acceleration change
 
 // specify starting points for state & actuator variables
 const size_t x_start = 0;
@@ -107,26 +109,26 @@ class FG_eval {
     fg[1 + epsi_start] = vars[epsi_start];
 
     // The rest of the constraints
-    for (int t=0; t < N-1; t++) {
-      // vars at time t
-      AD<double> x0 = vars[x_start + t];
-      AD<double> y0 = vars[y_start + t];
-      AD<double> psi0 = vars[psi_start + t];
-      AD<double> v0 = vars[v_start + t];
-      AD<double> cte0 = vars[cte_start + t];
-      AD<double> epsi0 = vars[epsi_start + t];
+    for (int t=1; t < N-1; t++) {
+      // state at time t
+      AD<double> x0 = vars[x_start + t-1];
+      AD<double> y0 = vars[y_start + t-1];
+      AD<double> psi0 = vars[psi_start + t-1];
+      AD<double> v0 = vars[v_start + t-1];
+      AD<double> cte0 = vars[cte_start + t-1];
+      AD<double> epsi0 = vars[epsi_start + t-1];
 
-      // vars at time t+1
-      AD<double> x1 = vars[x_start + t+1];
-      AD<double> y1 = vars[y_start + t+1];
-      AD<double> psi1 = vars[psi_start + t+1];
-      AD<double> v1 = vars[v_start + t+1];
-      AD<double> cte1 = vars[cte_start + t+1];
-      AD<double> epsi1 = vars[epsi_start + t+1];
+      // state at time t+1
+      AD<double> x1 = vars[x_start + t];
+      AD<double> y1 = vars[y_start + t];
+      AD<double> psi1 = vars[psi_start + t];
+      AD<double> v1 = vars[v_start + t];
+      AD<double> cte1 = vars[cte_start + t];
+      AD<double> epsi1 = vars[epsi_start + t];
 
       // actuation at time t
-      AD<double> delta0 = vars[delta_start + t];
-      AD<double> a0 = vars[a_start + t];
+      AD<double> delta0 = vars[delta_start + t-1];
+      AD<double> a0 = vars[a_start + t-1];
 
       AD<double> f0 = coeffs[0] + coeffs[1]*x0 + coeffs[2]*x0*x0 + coeffs[3]*x0*x0*x0;
       AD<double> psides0 = CppAD::atan(3*coeffs[3]*x0*x0 + 2*coeffs[2]*x0 + coeffs[1]);
@@ -205,8 +207,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
   // The upper & lower limits of delta are set to -25 and 25 deg (in radians)
   for (int i = delta_start; i < a_start; i++) {
-    vars_lowerbound[i] = -0.436332;
-    vars_upperbound[i] = 0.436332;
+    vars_lowerbound[i] = -0.436332*Lf;
+    vars_upperbound[i] = 0.436332*Lf;
   }
 
   // Acceleration/decceleration upper and lower limits.
@@ -285,7 +287,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   result.push_back(solution.x[delta_start]);
   result.push_back(solution.x[a_start]);
 
-  for (int i=0; i < N; i++) {
+  for (int i=0; i < N-1; i++) {
     result.push_back(solution.x[x_start + i]);
     result.push_back(solution.x[y_start + i]);
   }
