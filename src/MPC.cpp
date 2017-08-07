@@ -22,27 +22,27 @@ const double dt = 0.10;
 const double Lf = 2.67;
 
 // reference velocity
-const double ref_v = 200;
+const double ref_v = 128;
 
-/*//weighting factors to tune the MPC
+//weighting factors to tune the MPC
 const double cte_wt      = 2000;  // cross-track error
 const double epsi_wt     = 2000;  // psi error
-const double v_wt        = 1;  // velocity
+const double v_wt        = 1;  // reference velocity
 const double delta_wt    = 5;  // steering delta
 const double a_wt        = 5;  // acceleration
 const double deltadot_wt = 200;  // steering delta change
 const double adot_wt     = 10;  // acceleration change
-*/
 
+/*
 //weighting factors to tune the MPC, good up to ref_v=200
 const double cte_wt      = 200.0;  // cross-track error
 const double epsi_wt     = 40.0;  // psi error
-const double v_wt        = 0.1;  // velocity
+const double v_wt        = 0.1;  // reference velocity
 const double delta_wt    = 1600.0;  // steering delta
 const double a_wt        = 1.0;  // acceleration
 const double deltadot_wt = 4000.0;  // steering delta change
 const double adot_wt     = 0.0;  // acceleration change
-
+*/
 
 // specify starting points for state & actuator variables
 const size_t x_start = 0;

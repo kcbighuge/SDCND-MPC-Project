@@ -127,14 +127,13 @@ int main() {
           // predict state in 100ms
           const double steer_value = j[1]["steering_angle"];
           const double throttle_value = j[1]["throttle"];
-          const double latency = 0.1;  //try half of latency period
+          const double latency = 0.1;
 
           double fut_x = 0 + v * cos(0) * latency;  
           double fut_y = 0 + v * sin(0) * latency;
           double fut_psi = 0 - (v/Lf) * steer_value*deg2rad(25) * latency;
           double fut_v = v + throttle_value * latency;
-          //double fut_cte = cte + v *sin(epsi) * latency;
-          //double fut_epsi = epsi - (v/Lf) * steer_value*deg2rad(25) * latency;
+
           state << fut_x, fut_y, fut_psi, fut_v, cte, epsi;
 
           const auto vars = mpc.Solve(state, coeffs);

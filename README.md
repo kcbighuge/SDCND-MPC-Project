@@ -60,6 +60,7 @@ Self-Driving Car Engineer Nanodegree Program
 3. Compile: `cmake .. && make`
 4. Run it: `./mpc`.
 
+
 ## Tips
 
 1. It's recommended to test the MPC on basic examples to see if your implementation behaves as desired. One possible example
@@ -68,12 +69,14 @@ is the vehicle starting offset of a straight line (reference). If the MPC implem
 2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
 3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.
 
+---
+
 ## The Model
 #### Describe model in detail. This includes the state, actuators and update equations.
 
-The MPC is set up as follows:
+The MPC consists of:
 1. Vehicle trajectory with number of timesteps `N` and timestep duration `dt`.
-2. Vehicle state, actuation, and lower/upper constraints on the variables. State & actuation consists of: 
+2. Vehicle state and actuation variables, along with lower/upper constraints on the variables. State and actuation consists of: 
 - `x,y` positions
 - `psi` yaw angle
 - `v` velocity
@@ -81,29 +84,54 @@ The MPC is set up as follows:
 - `epsi` yaw error
 - `delta` steering angle
 - `a` acceleration
-3. Cost function to optimize actuator values.
+3. Cost function to optimize actuation for 2 objectives: __(1) Speed__ close to desired speed, __(2) Trajectory__ close to polynomial line of reference path. The cost function utilizes state variables as well as the value gap between sequential actuator cost (`deltadot`, `adot`).
 
-The state is updated as follows:
+The cost function weights are taken from the [project Q&A video](https://www.youtube.com/watch?v=bOQuhpz3YfU) after some experimentation with other weighting factors that heavily penalized `delta` & `deltadot` rather than the current heavy weighting on `cte` & `epsi`, as seen below:
 ```
-x1 = (x0 + v0 * CppAD::cos(psi0) * dt);
-y1 = (y0 + v0 * CppAD::sin(psi0) * dt);
-psi1 = (psi0 + (v0/Lf) * delta0 * dt);
-v1 = (v0 + a0 * dt);
-cte1 = ((f0-y0) + v0 * CppAD::sin(epsi0) * dt);
-epsi1 = ((psi0-psides0) + (v0/Lf) * delta0 * dt);
+cte_wt      = 2000;  // cross-track error
+epsi_wt     = 2000;  // psi error
+v_wt        = 1;     // reference velocity
+delta_wt    = 5;     // steering delta
+a_wt        = 5;     // acceleration
+deltadot_wt = 200;   // steering delta change
+adot_wt     = 10;    // acceleration change
 ```
+
+The state is updated with the following equations:
+```
+x = x + v * cos(psi) * dt
+y = y + v * sin(psi) * dt
+psi = psi + (v/Lf) * delta * dt
+v = v + a * dt
+cte = cte + v * sin(epsi) * dt
+epsi = epsi + (v/Lf) * delta * dt
+```
+
 
 ## Timestep Length and Elapsed Duration (N & dt)
 #### Discuss the reasoning behind the chosen N (timestep length) and dt (elapsed duration between timesteps) values. Provide details of previous values tried.
 
-The values were initially set to `N=10` & `dt=0.1`, but the timestep length `N` value was later increased to 16 to account for additional points projected into the future. The elapsed duration `dt` value was increased to 0.16 to be larger than the 0.1s latency period.
+The values were initially set to `N=10` and `dt=0.1`, but the timestep length `N` value was later increased to 16 to account for additional points projected into the future. The elapsed duration `dt` value was increased to 0.11 to be larger than the 0.1s latency period.
+
+After these values failed to impact the controller's results, the values were returned to the original `N=10` and `dt=0.1` settings from the Q&A video.
+
 
 ## Polynomial Fitting and MPC Preprocessing
 #### A polynomial is fitted to waypoints. If preprocess waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described.
 
-The yellow line marks the waypoints path with a polynomial fitted to waypoints received from telemetry.
+The yellow reference line in the video indicates a 3rd degree polynomial fitted with waypoints received from telemetry, while the green line indicates the MPC predicted trajectory.
+
+Prior to the MPC updates, the waypoints are in global coordinates and need to be shifted to adopt the vehicle's frame of reference. The vehicle's location is transformed and the yaw angle rotated in `main.cpp` lines 104-110). 
+
 
 ## Model Predictive Control with Latency
 #### Implement Model Predictive Control that handles a 100 millisecond latency. Provides details on how to deal with latency.
 
-The current implementation deals with the 100ms latency by using a timestep `dt` value of 0.11, which is larger than the 0.1s latency value.
+The MPC handles a 100 millisecond latency (i.e., the car reacts to actuation after 100ms) by using a predicted state that is calculated 100ms into the future. 
+- This "future" state uses the same update equations in the MPC and adjusts the `x, y, psi, v` variables in `main.cpp` lines 128-135. 
+- The new state is passed to `mpc.Solve` and returns actuation variables that will properly match a state 100ms in the future.
+
+
+Using the MPC the vehicle successfully drives around the track, and two completed laps can be seen here:
+
+[![MPC](http://img.youtube.com/vi/nBQMfh9YI1k/0.jpg)](https://youtu.be/nBQMfh9YI1k "MPC")
