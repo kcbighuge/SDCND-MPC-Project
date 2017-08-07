@@ -84,9 +84,9 @@ The MPC consists of:
 - `epsi` yaw error
 - `delta` steering angle
 - `a` acceleration
-3. Cost function to optimize actuation for 2 objectives: __(1) Speed__ close to desired speed, __(2) Trajectory__ close to polynomial line of reference path. The cost function utilizes state variables as well as the value gap between sequential actuator cost (`deltadot`, `adot`).
+3. Cost function to optimize actuation for 2 objectives: __(1) Speed__ close to desired speed `ref_v` (set to 128 MPH), __(2) Trajectory__ close to polynomial line of reference path. The cost function utilizes state & actuation values as well as the value gap between sequential actuator cost (`deltadot`, `adot`).
 
-The cost function weights are taken from the [project Q&A video](https://www.youtube.com/watch?v=bOQuhpz3YfU) after some experimentation with other weighting factors that heavily penalized `delta` & `deltadot` rather than the current heavy weighting on `cte` & `epsi`, as seen below:
+The cost function weights are taken from the [project Q&A video](https://www.youtube.com/watch?v=bOQuhpz3YfU) after some experimentation with other weighting factors that heavily penalized `delta` & `deltadot` rather than the current heavy weighting on `cte` & `epsi` seen in `MPC.cpp` [lines 28-34](https://github.com/kcbighuge/SDCND-MPC-Project/blob/master/src/MPC.cpp#L28-L34):
 ```
 cte_wt      = 2000;  // cross-track error
 epsi_wt     = 2000;  // psi error
@@ -99,11 +99,11 @@ adot_wt     = 10;    // acceleration change
 
 The state is updated with the following equations:
 ```
-x = x + v * cos(psi) * dt
-y = y + v * sin(psi) * dt
-psi = psi + (v/Lf) * delta * dt
-v = v + a * dt
-cte = cte + v * sin(epsi) * dt
+x    = x + v * cos(psi) * dt
+y    = y + v * sin(psi) * dt
+psi  = psi + (v/Lf) * delta * dt
+v    = v + a * dt
+cte  = cte + v * sin(epsi) * dt
 epsi = epsi + (v/Lf) * delta * dt
 ```
 
@@ -121,17 +121,17 @@ After these values failed to impact the controller's results, the values were re
 
 The yellow reference line in the video indicates a 3rd degree polynomial fitted with waypoints received from telemetry, while the green line indicates the MPC predicted trajectory.
 
-Prior to the MPC updates, the waypoints are in global coordinates and need to be shifted to adopt the vehicle's frame of reference. The vehicle's location is transformed and the yaw angle rotated in `main.cpp` lines 104-110). 
+Prior to the MPC updates, the waypoints are in global coordinates and need to be shifted to adopt the vehicle's frame of reference. The vehicle's location is transformed and the yaw angle rotated in `main.cpp` [lines 104-110](https://github.com/kcbighuge/SDCND-MPC-Project/blob/master/src/main.cpp#L104-L110). 
 
 
 ## Model Predictive Control with Latency
 #### Implement Model Predictive Control that handles a 100 millisecond latency. Provides details on how to deal with latency.
 
 The MPC handles a 100 millisecond latency (i.e., the car reacts to actuation after 100ms) by using a predicted state that is calculated 100ms into the future. 
-- This "future" state uses the same update equations in the MPC and adjusts the `x, y, psi, v` variables in `main.cpp` lines 128-135. 
+- This "future" state uses the same update equations in the MPC and adjusts the `x, y, psi, v` variables in `main.cpp` [lines 128-135](https://github.com/kcbighuge/SDCND-MPC-Project/blob/master/src/main.cpp#L128-L135). 
 - The new state is passed to `mpc.Solve` and returns actuation variables that will properly match a state 100ms in the future.
 
 
-Using the MPC the vehicle successfully drives around the track, and two completed laps can be seen here:
+The vehicle can successfully drive around the track at speeds nearing 100 MPH, and two completed laps can be seen here:
 
 [![MPC](http://img.youtube.com/vi/nBQMfh9YI1k/0.jpg)](https://youtu.be/nBQMfh9YI1k "MPC")
