@@ -1,7 +1,7 @@
 # Model Predictive Control (MPC)
 Self-Driving Car Engineer Nanodegree Program
 
-[![MPC](http://img.youtube.com/vi/nBQMfh9YI1k/0.jpg)](https://youtu.be/nBQMfh9YI1k "MPC"){:target="_blank"}
+[![MPC](http://img.youtube.com/vi/nBQMfh9YI1k/0.jpg)](https://youtu.be/nBQMfh9YI1k "MPC")
 
 The purpose of this project is to use Model Predictive Control (MPC) to drive a lap around the track while staying on the drivable portion of the track surface. 
 
@@ -74,7 +74,7 @@ The MPC handles a 100 millisecond latency (i.e., the car reacts to actuation aft
 
 The vehicle can successfully drive around the track at speeds nearing 100 MPH, and two completed laps can be seen here:
 
-[![MPC](http://img.youtube.com/vi/nBQMfh9YI1k/0.jpg)](https://youtu.be/nBQMfh9YI1k "MPC"){:target="_blank"}
+[![MPC](http://img.youtube.com/vi/nBQMfh9YI1k/0.jpg)](https://youtu.be/nBQMfh9YI1k "MPC")
 
 ## Tips
 
