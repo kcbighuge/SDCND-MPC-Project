@@ -1,7 +1,88 @@
-# CarND-Controls-MPC
+# Model Predictive Control (MPC)
 Self-Driving Car Engineer Nanodegree Program
 
----
+[![MPC](http://img.youtube.com/vi/nBQMfh9YI1k/0.jpg)](https://youtu.be/nBQMfh9YI1k "MPC")
+
+The purpose of this product is to use Model Predictive Control (MPC) to drive a lap around the track while staying on the drivable portion of the track surface. 
+
+## Basic Build Instructions
+
+1. Clone this repo. (see [original udacity repo here](https://github.com/udacity/CarND-MPC-Project))
+2. Make a build directory: `mkdir build && cd build`
+3. Compile: `cmake .. && make`
+4. Run it: `./mpc`.
+
+## The Model
+#### Describe the model in detail, including the state, actuators and update equations.
+
+The MPC consists of:
+1. Vehicle trajectory with number of timesteps `N` and timestep duration `dt`.
+2. Vehicle state and actuation variables, along with lower/upper constraints on the variables. State and actuation consists of: 
+- `x,y` positions
+- `psi` yaw angle
+- `v` velocity
+- `cte` cross track error
+- `epsi` yaw error
+- `delta` steering angle
+- `a` acceleration
+3. Cost function to optimize actuation for 2 objectives: __(1) Speed__ close to desired speed `ref_v` (set to 128 MPH), __(2) Trajectory__ close to polynomial line of reference path. The cost function utilizes state & actuation values as well as the value gap between sequential actuator cost (`deltadot`, `adot`).
+
+The cost function weights are taken from the [project Q&A video](https://www.youtube.com/watch?v=bOQuhpz3YfU) after some experimentation with other weighting factors that heavily penalized `delta` & `deltadot` rather than the current heavy weighting on `cte` & `epsi` seen in `MPC.cpp` [lines 28-34](https://github.com/kcbighuge/SDCND-MPC-Project/blob/master/src/MPC.cpp#L28-L34):
+```
+cte_wt      = 2000;  // cross-track error
+epsi_wt     = 2000;  // psi error
+v_wt        = 1;     // reference velocity
+delta_wt    = 5;     // steering delta
+a_wt        = 5;     // acceleration
+deltadot_wt = 200;   // steering delta change
+adot_wt     = 10;    // acceleration change
+```
+
+The state is updated with the following equations:
+```
+x    = x + v * cos(psi) * dt
+y    = y + v * sin(psi) * dt
+psi  = psi + (v/Lf) * delta * dt
+v    = v + a * dt
+cte  = cte + v * sin(epsi) * dt
+epsi = epsi + (v/Lf) * delta * dt
+```
+
+## Timestep Length and Elapsed Duration (N & dt)
+#### Discuss the reasoning behind the chosen N (timestep length) and dt (elapsed duration between timesteps) values. Provide details of previous values tried.
+
+The values were initially set to `N=10` and `dt=0.1`, but the timestep length `N` value was later increased to 16 to account for additional points projected into the future. The elapsed duration `dt` value was increased to 0.11 to be larger than the 0.1s latency period.
+
+After these values failed to impact the controller's results, the values were returned to the original `N=10` and `dt=0.1` settings from the Q&A video.
+
+
+## Polynomial Fitting and MPC Preprocessing
+#### A polynomial is fitted to waypoints. If preprocess waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described.
+
+The yellow reference line in the video indicates a 3rd degree polynomial fitted with waypoints received from telemetry, while the green line indicates the MPC predicted trajectory.
+
+Prior to the MPC updates, the waypoints are in global coordinates and need to be shifted to adopt the vehicle's frame of reference. The vehicle's location is transformed and the yaw angle rotated in `main.cpp` [lines 104-110](https://github.com/kcbighuge/SDCND-MPC-Project/blob/master/src/main.cpp#L104-L110). 
+
+
+## Model Predictive Control with Latency
+#### Implement Model Predictive Control that handles a 100 millisecond latency. Provides details on how to deal with latency.
+
+The MPC handles a 100 millisecond latency (i.e., the car reacts to actuation after 100ms) by using a predicted state that is calculated 100ms into the future. 
+- This "future" state uses the same update equations in the MPC and adjusts the `x, y, psi, v` variables in `main.cpp` [lines 128-135](https://github.com/kcbighuge/SDCND-MPC-Project/blob/master/src/main.cpp#L128-L135). 
+- The new state is passed to `mpc.Solve` and returns actuation variables that will properly match a state 100ms in the future.
+
+
+The vehicle can successfully drive around the track at speeds nearing 100 MPH, and two completed laps can be seen here:
+
+[![MPC](http://img.youtube.com/vi/nBQMfh9YI1k/0.jpg)](https://youtu.be/nBQMfh9YI1k "MPC")
+
+## Tips
+
+1. It's recommended to test the MPC on basic examples to see if your implementation behaves as desired. One possible example
+is the vehicle starting offset of a straight line (reference). If the MPC implementation is correct, after some number of timesteps
+(not too many) it should find and track the reference line.
+2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
+3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.
 
 ## Dependencies
 
@@ -51,87 +132,3 @@ Self-Driving Car Engineer Nanodegree Program
 * [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page). This is already part of the repo so you shouldn't have to worry about it.
 * Simulator. You can download these from the [releases tab](https://github.com/udacity/self-driving-car-sim/releases).
 * Not a dependency but read the [DATA.md](./DATA.md) for a description of the data sent back from the simulator.
-
-
-## Basic Build Instructions
-
-1. Clone this repo. (see [original udacity repo here](https://github.com/udacity/CarND-MPC-Project))
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./mpc`.
-
-
-## Tips
-
-1. It's recommended to test the MPC on basic examples to see if your implementation behaves as desired. One possible example
-is the vehicle starting offset of a straight line (reference). If the MPC implementation is correct, after some number of timesteps
-(not too many) it should find and track the reference line.
-2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
-3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.
-
----
-
-## The Model
-#### Describe model in detail. This includes the state, actuators and update equations.
-
-The MPC consists of:
-1. Vehicle trajectory with number of timesteps `N` and timestep duration `dt`.
-2. Vehicle state and actuation variables, along with lower/upper constraints on the variables. State and actuation consists of: 
-- `x,y` positions
-- `psi` yaw angle
-- `v` velocity
-- `cte` cross track error
-- `epsi` yaw error
-- `delta` steering angle
-- `a` acceleration
-3. Cost function to optimize actuation for 2 objectives: __(1) Speed__ close to desired speed `ref_v` (set to 128 MPH), __(2) Trajectory__ close to polynomial line of reference path. The cost function utilizes state & actuation values as well as the value gap between sequential actuator cost (`deltadot`, `adot`).
-
-The cost function weights are taken from the [project Q&A video](https://www.youtube.com/watch?v=bOQuhpz3YfU) after some experimentation with other weighting factors that heavily penalized `delta` & `deltadot` rather than the current heavy weighting on `cte` & `epsi` seen in `MPC.cpp` [lines 28-34](https://github.com/kcbighuge/SDCND-MPC-Project/blob/master/src/MPC.cpp#L28-L34):
-```
-cte_wt      = 2000;  // cross-track error
-epsi_wt     = 2000;  // psi error
-v_wt        = 1;     // reference velocity
-delta_wt    = 5;     // steering delta
-a_wt        = 5;     // acceleration
-deltadot_wt = 200;   // steering delta change
-adot_wt     = 10;    // acceleration change
-```
-
-The state is updated with the following equations:
-```
-x    = x + v * cos(psi) * dt
-y    = y + v * sin(psi) * dt
-psi  = psi + (v/Lf) * delta * dt
-v    = v + a * dt
-cte  = cte + v * sin(epsi) * dt
-epsi = epsi + (v/Lf) * delta * dt
-```
-
-
-## Timestep Length and Elapsed Duration (N & dt)
-#### Discuss the reasoning behind the chosen N (timestep length) and dt (elapsed duration between timesteps) values. Provide details of previous values tried.
-
-The values were initially set to `N=10` and `dt=0.1`, but the timestep length `N` value was later increased to 16 to account for additional points projected into the future. The elapsed duration `dt` value was increased to 0.11 to be larger than the 0.1s latency period.
-
-After these values failed to impact the controller's results, the values were returned to the original `N=10` and `dt=0.1` settings from the Q&A video.
-
-
-## Polynomial Fitting and MPC Preprocessing
-#### A polynomial is fitted to waypoints. If preprocess waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described.
-
-The yellow reference line in the video indicates a 3rd degree polynomial fitted with waypoints received from telemetry, while the green line indicates the MPC predicted trajectory.
-
-Prior to the MPC updates, the waypoints are in global coordinates and need to be shifted to adopt the vehicle's frame of reference. The vehicle's location is transformed and the yaw angle rotated in `main.cpp` [lines 104-110](https://github.com/kcbighuge/SDCND-MPC-Project/blob/master/src/main.cpp#L104-L110). 
-
-
-## Model Predictive Control with Latency
-#### Implement Model Predictive Control that handles a 100 millisecond latency. Provides details on how to deal with latency.
-
-The MPC handles a 100 millisecond latency (i.e., the car reacts to actuation after 100ms) by using a predicted state that is calculated 100ms into the future. 
-- This "future" state uses the same update equations in the MPC and adjusts the `x, y, psi, v` variables in `main.cpp` [lines 128-135](https://github.com/kcbighuge/SDCND-MPC-Project/blob/master/src/main.cpp#L128-L135). 
-- The new state is passed to `mpc.Solve` and returns actuation variables that will properly match a state 100ms in the future.
-
-
-The vehicle can successfully drive around the track at speeds nearing 100 MPH, and two completed laps can be seen here:
-
-[![MPC](http://img.youtube.com/vi/nBQMfh9YI1k/0.jpg)](https://youtu.be/nBQMfh9YI1k "MPC")
